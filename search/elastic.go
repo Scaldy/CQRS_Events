@@ -46,7 +46,7 @@ func (r *ElasticSearchRepository) SearchFeed(ctx context.Context, query string) 
 	var buf bytes.Buffer
 
 	searchQuery := map[string]interface{}{
-		"query": map[string]interface{}{
+		"query": map[string]interface{}{ 
 			"multi_match": map[string]interface{}{
 				"query":            query,
 				"fields":           []string{"title", "description"},
@@ -71,7 +71,7 @@ func (r *ElasticSearchRepository) SearchFeed(ctx context.Context, query string) 
 	defer func() {
 		if err := res.Body.Close(); err != nil {
 			results = nil
-		}
+		}z
 	}()
 
 	if res.IsError() {
@@ -83,11 +83,16 @@ func (r *ElasticSearchRepository) SearchFeed(ctx context.Context, query string) 
 		return nil, err
 	}
 
-	var feeds []*models.Feed
+	var feeds []models.Feed
 	for _, hit := range eRes["hits"].(map[string]interface{})["hits"].([]interface{}) {
-		var feed models.Feed
+		feed := models.Feed{}
 		source := hit.(map[string]interface{})["_source"]
-		marshal, err
-		feeds = append(feeds, &feed)
+		marshal, err := json.Marshal(source)
+		if err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(marshal, &feed); err == nil {
+			feeds = append(feeds, feed)
+		}
 	}
 }
